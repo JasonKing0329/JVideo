@@ -13,6 +13,7 @@ import com.king.app.video.customview.DragSideBarTrigger;
 import com.king.app.video.customview.DragSideBar.DragSideBarListener;
 import com.king.app.video.data.personal.DatabaseInfor;
 
+import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
@@ -142,11 +143,32 @@ public class VideoActivity extends Activity implements OnClickListener
 			moreButton.setBackgroundResource(R.drawable.ripple_white);
 		}
 
+		touchSideView = findViewById(R.id.video_touch_side);
+		playListSideBar = (DragSideBar) findViewById(R.id.video_playlist);
+		playListSideBar.setDragSideBarListener(this);
+
+		dragSideBarTrigger = new DragSideBarTrigger(this, playListSideBar);
+		playListManager = new PlayListManager(this, playListSideBar);
+		touchSideView.setOnTouchListener(sideTouchListener);
+
+		handlePlayIntent(getIntent());
+	}
+
+	private void handlePlayIntent(Intent intent) {
+		Uri uri = intent.getData();
+		String id = intent.getStringExtra(Constants.PLAY_VIDEO_ID);
+		boolean fromFileSystem = (id == null);
+
+		if (fromFileSystem) {
+			ObjectCache.putVideoList(null);
+			sideCtrlButton.setVisibility(View.GONE);
+		}
+		else {
+            sideCtrlButton.setVisibility(View.VISIBLE);
+			touchSideView.setOnTouchListener(null);
+		}
 		initPlayList();
 
-		Uri uri = getIntent().getData();
-		String id = getIntent().getStringExtra(Constants.PLAY_VIDEO_ID);
-		boolean fromFileSystem = (id == null);
 		playVideo(uri, id, fromFileSystem, false);
 
 		adjustControlBar();
@@ -154,6 +176,16 @@ public class VideoActivity extends Activity implements OnClickListener
 		AudioManager audioManager = (AudioManager) getSystemService(
 				Context.AUDIO_SERVICE);
 		onMute(audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0);
+	}
+
+	/**
+	 * activity的launch mode是singleInstance的，因此当VideoActivity处于后台收到了其他应用调用视频，需要处理onNewIntent
+	 * @param intent
+	 */
+	@Override
+	protected void onNewIntent(Intent intent) {
+		super.onNewIntent(intent);
+		handlePlayIntent(intent);
 	}
 
 	/**
@@ -195,13 +227,6 @@ public class VideoActivity extends Activity implements OnClickListener
 	}
 
 	private void initPlayList() {
-		touchSideView = findViewById(R.id.video_touch_side);
-		playListSideBar = (DragSideBar) findViewById(R.id.video_playlist);
-		playListSideBar.setDragSideBarListener(this);
-
-		dragSideBarTrigger = new DragSideBarTrigger(this, playListSideBar);
-		playListManager = new PlayListManager(this, playListSideBar);
-		touchSideView.setOnTouchListener(sideTouchListener);
 		if (ObjectCache.getVideoList() != null) {
 			String videoId = getIntent().getStringExtra(Constants.PLAY_VIDEO_ID);
 			playListManager.initListData(ObjectCache.getVideoList(), videoId, ObjectCache.getVideoOrder().getId());
