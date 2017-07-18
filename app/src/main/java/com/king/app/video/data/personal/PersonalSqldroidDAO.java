@@ -14,6 +14,8 @@ import com.king.app.video.model.VideoOrder;
 
 import android.util.Log;
 
+import static android.R.attr.name;
+
 public class PersonalSqldroidDAO implements PersonalDataService {
 
 	private final String TAG = "PersonalSqldroidDAO";
@@ -122,10 +124,16 @@ public class PersonalSqldroidDAO implements PersonalDataService {
 		Log.d(TAG, "updatePersonalData " + item.getPath());
 		Connection connection = connect(DatabaseInfor.DB_PATH);
 
+		String path = item.getPath();
+		// 带"'"号的要特殊处理
+		if (path.contains("'")) {
+			path = path.replace("'", "''");
+		}
+
 		StringBuffer buffer = new StringBuffer("UPDATE ");
 		buffer.append(" video SET v_position= ").append(item.getLastPlayPosition())
 				.append(", v_score= ").append(item.getScore())
-				.append(", v_path= '").append(item.getPath())
+				.append(", v_path= '").append(path)
 				.append("', v_flag= '").append(item.getFlag())
 				.append("' WHERE v_id = '").append(item.getId()).append("'");
 		Statement statement = null;
@@ -218,6 +226,12 @@ public class PersonalSqldroidDAO implements PersonalDataService {
 		Log.d(TAG, "addPersonalData " + item.getPath());
 		Connection connection = connect(DatabaseInfor.DB_PATH);
 
+		String path = item.getPath();
+		// 带"'"号的要特殊处理
+		if (path.contains("'")) {
+			path = path.replace("'", "''");
+		}
+
 		String sql = "INSERT INTO video (v_id, v_position, v_score, v_path, v_flag)" +
 				" VALUES(?,?,?,?,?)";
 		PreparedStatement stmt = null;
@@ -227,7 +241,7 @@ public class PersonalSqldroidDAO implements PersonalDataService {
 			stmt.setString(1, item.getId());
 			stmt.setInt(2, item.getLastPlayPosition());
 			stmt.setInt(3, item.getScore());
-			stmt.setString(4, item.getPath());
+			stmt.setString(4, path);
 			stmt.setString(5, item.getFlag());
 
 			stmt.executeUpdate();
